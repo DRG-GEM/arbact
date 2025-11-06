@@ -449,7 +449,7 @@
                             // Usamos el 'buffer' de la imagen
                             docChildren.push(
                                 new Paragraph({
-                                    children: [
+                                    children: [ // <-- El array de hijos EMPIEZA aquí
                                         new ImageRun({
                                             data: img.buffer, // El ArrayBuffer
                                             transformation: {
@@ -457,11 +457,14 @@
                                                 height: 300, // Alto razonable
                                             },
                                         }),
+                                    ], // <-- El array de hijos TERMINA aquí
+                                    // Las propiedades del Párrafo van FUERA del array:
                                     spacing: { after: 100 },
+                                    alignment: AlignmentType.CENTER // <-- He vuelto a añadir el centrado
                                 })
                             );
                         }
-                    } // <-- ¡AQUÍ ESTÁ LA CORRECCIÓN! Faltaba esta llave de cierre.
+                    } // <-- Esta es la llave que añadí antes (y que estaba bien)
 
                     // Vídeo (*** MODIFICADO ***)
                     if (activity.videoUrl) {
