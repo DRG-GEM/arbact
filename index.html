@@ -206,8 +206,9 @@
             const success = await loadScript(DOCX_URL);
             
             if (success) {
-                // Comprobar si los objetos globales (docx y FileSaver) existen
-                if (typeof docx !== 'undefined' && typeof FileSaver !== 'undefined') {
+                // Comprobar si los objetos globales (docx y saveAs) existen
+                // *** CORRECCIÓN 1/3: Comprobar 'saveAs' en lugar de 'FileSaver' ***
+                if (typeof docx !== 'undefined' && typeof saveAs !== 'undefined') {
                     librariesLoaded = true;
                     statusEl.textContent = "¡Listo para generar!";
                     statusEl.classList.remove('text-gray-500');
@@ -429,7 +430,8 @@
             if (librariesLoaded) {
                 // Esperar un breve momento para que el DOM se actualice
                 setTimeout(() => {
-                     if (typeof docx !== 'undefined' && typeof FileSaver !== 'undefined') {
+                    // *** CORRECCIÓN 2/3: Comprobar 'saveAs' en lugar de 'FileSaver' ***
+                     if (typeof docx !== 'undefined' && typeof saveAs !== 'undefined') {
                         docxBtn.disabled = false;
                         docxBtn.classList.remove('hidden');
                      } else {
@@ -599,8 +601,9 @@
                 });
 
                 // 5. Generar el Blob y descargarlo
+                // *** CORRECCIÓN 3/3: Llamar a 'saveAs' directamente ***
                 const blob = await Packer.toBlob(doc);
-                FileSaver.saveAs(blob, "informe_generado.docx");
+                saveAs(blob, "informe_generado.docx");
 
                 docxBtn.textContent = 'Descargar .docx';
                 docxBtn.disabled = false;
