@@ -214,6 +214,22 @@
         // URL completa para el HTML/PDF
         const LOGO_BASE64_URL = LOGO_BASE64_PREFIX + LOGO_BASE64_DATA;
 
+        
+        /**
+         * Función auxiliar para cargar un script dinámicamente
+         * Devuelve una promesa que se resuelve (true) si carga, o (false) si falla.
+         * ESTA FUNCIÓN FALTABA Y CAUSABA EL ERROR
+         */
+        function loadScript(src) {
+            return new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => resolve(true);
+                script.onerror = () => resolve(false);
+                document.head.appendChild(script);
+            });
+        }
+
 
         /**
          * Inicializador de la aplicación
