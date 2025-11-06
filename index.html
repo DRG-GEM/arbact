@@ -165,8 +165,8 @@
         // --- NÚCLEO DE LA APLICACIÓN ---
         
         // URLs de las librerías
-        // (unpkg.com es un CDN fiable que funcionará en Netlify/Github)
-        const DOCX_URL = 'https://unpkg.com/docx@8.2.2/build/umd/index.js';
+        // *** CAMBIADO a la URL que proporcionaste ***
+        const DOCX_URL = 'https://unpkg.com/docx@8.5.0/build/index.umd.js';
         const FILESAVER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js';
 
         // Elementos del DOM
@@ -189,7 +189,8 @@
          */
         async function loadScript(url) {
             try {
-                const response = await fetch(url);
+                // Añadimos un 'cache buster' por si acaso
+                const response = await fetch(url + '?t=' + new Date().getTime()); 
                 if (!response.ok) {
                     throw new Error(`Error HTTP: ${response.status}`);
                 }
@@ -220,13 +221,13 @@
                 // Damos un tiempo prudencial (500ms) para que el navegador parsee los scripts
                 setTimeout(() => {
                     // Doble comprobación de que los objetos existen
+                    // La v8.5.0 de docx puede que se llame 'docx'
                     if (typeof docx !== 'undefined' && typeof saveAs !== 'undefined') {
                         libStatus.textContent = '¡Listo para generar!';
                         libStatus.classList.remove('text-gray-600');
                         libStatus.classList.add('text-green-600');
                         generateBtn.disabled = false;
-                        // docxBtn se activará después de generar
-                        console.log('Librerías cargadas con éxito.');
+                        console.log('Librerías cargadas con éxito (docx, saveAs).');
                     } else {
                         libStatus.textContent = 'Error al parsear librerías.';
                         libStatus.classList.add('text-red-600');
@@ -391,7 +392,6 @@
             // Comprobación de seguridad
             if (!generatedData || typeof docx === 'undefined' || typeof saveAs === 'undefined') {
                 console.error('Faltan datos o librerías (docx/saveAs).');
-                // No mostramos alert, solo log
                 return;
             }
 
@@ -401,6 +401,7 @@
             const { projectTitle, activities } = generatedData;
             
             // Desestructuramos los objetos de la librería docx
+            // La v8.5.0 debería tener los mismos objetos
             const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, AlignmentType } = docx;
 
             try {
@@ -469,8 +470,6 @@
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'Enlace al vídeo: ', bold: true }),
-                                    // Los hipervínculos en .docx requieren un manejo especial
-                                    // Por ahora, solo texto plano.
                                     new TextRun(activity.videoUrl),
                                 ],
                                 spacing: { after: 100 },
@@ -510,9 +509,7 @@
 
             } catch (e) {
                 console.error('Error al crear el .docx:', e);
-                // No usamos alert
                 docxBtn.textContent = 'Error al generar';
-                // No lo volvemos a activar si falla, para evitar más errores
             }
         });
 
