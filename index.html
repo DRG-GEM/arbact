@@ -457,11 +457,11 @@
                                                 height: 300, // Alto razonable
                                             },
                                         }),
-                                    ],
-                                spacing: { after: 100 },
-                            })
-                        );
-                    }
+                                    spacing: { after: 100 },
+                                })
+                            );
+                        }
+                    } // <-- ¡AQUÍ ESTÁ LA CORRECCIÓN! Faltaba esta llave de cierre.
 
                     // Vídeo (*** MODIFICADO ***)
                     if (activity.videoUrl) {
