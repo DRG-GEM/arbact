@@ -559,10 +559,15 @@
                             children: [
                                 new TextRun({ text: `${text}: `, bold: true }),
                                 new ExternalHyperlink({
-                                    child: new TextRun({
-                                        text: url,
-                                        style: "Hyperlink",
-                                    }),
+                                    // *** CORRECCIÓN ***
+                                    // El error estaba aquí. Debe ser 'children' (plural y un array)
+                                    // en lugar de 'child' (singular).
+                                    children: [
+                                        new TextRun({
+                                            text: url,
+                                            style: "Hyperlink",
+                                        })
+                                    ],
                                     link: url,
                                 }),
                             ],
