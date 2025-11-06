@@ -64,7 +64,11 @@
             <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Generador de Informes de Proyecto</h1>
             
             <div class="space-y-6">
-                <!-- Logo de Cabecera (ELIMINADO) -->
+                <!-- Logo de Cabecera (RESTAURADO) -->
+                <div>
+                    <label for="logo-file" class="block text-xl font-medium text-gray-800 mb-2">Logo de Cabecera (Opcional)</label>
+                    <input type="file" id="logo-file" class="w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" accept="image/*">
+                </div>
                 
                 <!-- Título General del Proyecto -->
                 <div>
@@ -190,35 +194,7 @@
         let generatedData = null;
         
         // --- LOGO FIJO (Solución Problema 1) ---
-        // Se ha incrustado el logo de ARBA Cartagena en Base64 para no tener que subirlo.
-        
-        /**
-         * Función para convertir Base64 (datos) a un ArrayBuffer
-         */
-        function base64ToBuffer(base64) {
-            // *** CORRECCIÓN ***
-            // Limpiamos el string de Base64 de cualquier salto de línea o espacio
-            // que pueda haber sido introducido al copiar y pegar.
-            const cleanBase64 = base64.replace(/(\r\n|\n|\r)/gm, "").trim();
-            
-            // Usamos el string limpio
-            const binaryString = window.atob(cleanBase64); 
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            return bytes.buffer;
-        }
-
-        // Datos del logo
-        const LOGO_BASE64_PREFIX = "data:image/jpeg;base64,";
-        // El string de datos Base64 del logo
-        const LOGO_BASE64_DATA = "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";
-        // Convertir los datos a un Buffer (se hace una sola vez)
-        const LOGO_BUFFER = base64ToBuffer(LOGO_BASE64_DATA);
-        // URL completa para el HTML/PDF
-        const LOGO_BASE64_URL = LOGO_BASE64_PREFIX + LOGO_BASE64_DATA;
+        // (Toda la sección del logo fijo ha sido eliminada para evitar el error 'atob')
 
         
         /**
@@ -325,8 +301,13 @@
 
             const projectTitle = document.getElementById('project-title').value;
             
-            // Usar el logo fijo
-            const logoImage = { url: LOGO_BASE64_URL, buffer: LOGO_BUFFER };
+            // Usar el logo subido (RESTAURADO)
+            const logoFile = document.getElementById('logo-file').files[0];
+            let logoImage = null;
+            if (logoFile) {
+                // Reutilizamos la función readImage que ya existe
+                logoImage = await readImage(logoFile);
+            }
             
             const activityEntries = document.querySelectorAll('#activities-container .activity-entry');
 
