@@ -1,65 +1,74 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full bg-gray-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Informes Dinámico</title>
-    <!-- Carga de Tailwind CSS -->
+    <title>Generador de Informes</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fuente Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- 
+      Librerías para .docx
+      Usamos la URL 8.5.0 que proporcionaste.
+    -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
-    <!-- Las librerías se cargarán dinámicamente con JavaScript -->
-
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
-        
-        /* Estilos para la impresión */
+
+        /* --- Estilos para la Impresión (PDF) --- */
         @media print {
-            body * {
-                visibility: hidden;
+            /* Ocultar el formulario y los botones al imprimir */
+            #form-section, #controls-section {
+                display: none !important;
             }
-            #document-output, #document-output * {
-                visibility: visible;
-            }
-            #document-output {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 20px;
-                box-shadow: none;
-                border: none;
-            }
-            #preview-controls, #form-section {
-                display: none;
-            }
-            #document-output a[href]:after {
-                content: none !important;
-            }
-            img {
+
+            /* Asegurarse de que la vista previa ocupe todo el espacio */
+            #output-section {
+                display: block !important;
+                width: 100% !important;
                 max-width: 100% !important;
-                page-break-inside: avoid;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
             }
-            .activity-print-section {
-                /* page-break-inside: avoid; */ 
-                /* NOTA: Se ha comentado esta línea. 
-                   Causaba que la primera página saliera en blanco si la primera actividad (con fotos) 
-                   no cabía entera después del título. Es mejor permitir que la actividad se divida.
-                */
+
+            /* Evitar que el contenedor principal sea demasiado estrecho */
+            main {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+
+            /* Corrección para la página en blanco: permitir que el contenido se divida */
+            .activity-output-entry {
+                 /* page-break-inside: avoid; <-- Eliminamos esto para evitar la página en blanco */
+            }
+
+            /* Ocultar los botones de eliminar en la impresión */
+            .delete-activity-btn {
+                display: none !importnant;
+            }
+
+            /* Forzar fondos blancos y quitar bordes en la impresión */
+            .bg-gray-50, .border {
+                background-color: transparent !important;
+                border: none !important;
+            }
+
+            /* Asegurar que los enlaces se vean */
+            a {
+                color: #000 !important;
+                text-decoration: underline !important;
             }
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 md:p-8">
-    <div class="max-w-4xl mx-auto">
+<body class="h-full flex items-start justify-center py-8 md:py-12 px-4">
+
+    <main class="w-full max-w-4xl mx-auto space-y-8">
         
-        <!-- Sección del Formulario -->
+        <!-- 1. Sección del Formulario -->
         <div id="form-section" class="bg-white p-6 md:p-8 rounded-lg shadow-md">
             <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Generador de Informes de Proyecto</h1>
             
@@ -73,134 +82,109 @@
                 <!-- Título General del Proyecto -->
                 <div>
                     <label for="project-title" class="block text-xl font-medium text-gray-800 mb-2">Título del Proyecto</label>
-                    <input type="text" id="project-title" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ej: Resumen de Actividades Q3">
+                    <input type="text" id="project-title" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ej: Resumen de Actividades Q3">
                 </div>
 
-                <hr class="my-6">
-
-                <!-- Contenedor Dinámico para Actividades -->
+                <!-- Contenedor de Actividades Dinámicas -->
                 <div>
                     <h2 class="text-xl font-medium text-gray-800 mb-4">Actividades del Proyecto</h2>
                     <div id="activities-container" class="space-y-6">
-                        <!-- Las nuevas actividades se añadirán aquí -->
+                        <!-- Las actividades se insertarán aquí por JS -->
                     </div>
-                </div>
-
-                <!-- Botón para Añadir Nueva Actividad -->
-                <div>
-                    <button type="button" id="add-activity-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
+                    <button id="add-activity-btn" class="mt-6 w-full flex justify-center items-center py-3 px-6 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         + Añadir Nueva Actividad
                     </button>
                 </div>
-
-                <hr class="my-6">
-                
-                <!-- Botón de Generar Documento Final -->
-                <div class="pt-4 flex items-center space-x-4">
-                    <button type="button" id="generate-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        Generar Documento
-                    </button>
-                    <!-- Indicador de estado de carga de librerías -->
-                    <span id="lib-status" class="text-sm font-medium text-gray-600">Cargando librerías...</span>
-                </div>
             </div>
         </div>
-        
-        <!-- Sección de Vista Previa (inicialmente oculta) -->
-        <div id="preview-section" class="mt-8 hidden">
-            <!-- CONTROLES -->
-            <div id="preview-controls" class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                <h2 class="text-2xl font-bold text-gray-800">Vista Previa</h2>
-                <div class="flex space-x-3">
-                    <!-- Botón de Imprimir (PDF) -->
-                    <button type="button" id="print-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300">
-                        Imprimir (Guardar como PDF)
-                    </button>
-                    <!-- Botón de Descargar .docx -->
-                    <button type="button" id="docx-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        Descargar .docx
-                    </button>
-                </div>
+
+        <!-- 2. Sección de Controles de Generación -->
+        <div id="controls-section" class="bg-white p-6 rounded-lg shadow-md flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+            <div class="flex items-center space-x-3">
+                <button id="generate-btn" class="w-full md:w-auto py-3 px-6 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400">
+                    Generar Documento
+                </button>
+                <span id="lib-status" class="text-sm text-gray-500">Cargando librerías...</span>
             </div>
             
-            <!-- Contenedor del documento generado -->
-            <div id="document-output" class="bg-white p-8 md:p-12 rounded-lg shadow-lg border border-gray-200">
-                <!-- El contenido se insertará aquí -->
+            <div class="flex items-center space-x-4">
+                <button id="print-btn" class="w-full md:w-auto py-3 px-5 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hidden">
+                    Imprimir (Guardar como PDF)
+                </button>
+                <button id="docx-btn" class="w-full md:w-auto py-3 px-5 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 hidden disabled:bg-gray-400" disabled>
+                    Descargar .docx
+                </button>
             </div>
         </div>
-        
-    </div>
 
-    <!-- Plantilla para una nueva actividad (oculta) -->
-    <!-- Fondo blanco por defecto -->
+        <!-- 3. Sección de Vista Previa (inicialmente oculta) -->
+        <div id="output-section" class="hidden bg-white p-8 md:p-12 rounded-lg shadow-lg relative print:shadow-none print:p-0">
+            <style id="print-styles"></style>
+            <div id="document-output" class="prose prose-lg max-w-none">
+                <!-- El contenido generado se insertará aquí -->
+            </div>
+        </div>
+
+    </main>
+
+
+    <!-- Plantilla para una nueva actividad (para clonar) -->
     <template id="activity-template">
-        <div class="activity-entry p-5 border rounded-lg bg-white space-y-4 relative">
-            <button type="button" class="remove-activity-btn absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold" title="Eliminar esta actividad">&times; Eliminar</button>
-            
-            <h3 class="text-lg font-semibold text-gray-700">Nueva Actividad</h3>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Actividad</label>
-                <input type="text" class="activity-name w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ej: Taller de Creatividad">
-            </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de la Actividad</label>
-                <input type="date" class="activity-date w-full px-3 py-2 border border-gray-300 rounded-md">
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Subir Foto(s) (puedes seleccionar varias)</label>
-                <input type="file" class="activity-image w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" accept="image/*" multiple>
-            </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">URL del Vídeo (YouTube, Vimeo, etc.)</label>
-                <input type="text" class="activity-video w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="https://...">
-            </div>
-
-            <div class="pt-2">
-                <h4 class="text-sm font-medium text-gray-700 mb-2">Publicaciones en Redes Sociales (URLs)</h4>
-                <div class="space-y-2">
-                    <input type="text" class="social-fb w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Enlace de Facebook...">
-                    <input type="text" class="social-ig w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Enlace de Instagram...">
-                    <input type="text" class="social-tw w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Enlace de Twitter...">
+        <div class="activity-entry border border-gray-300 p-5 rounded-lg bg-gray-50 relative">
+            <button class="delete-activity-btn absolute top-3 right-3 text-gray-400 hover:text-red-600" title="Eliminar esta actividad">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-base font-medium text-gray-700">Nombre de la Actividad</label>
+                    <input type="text" class="activity-name mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="Ej: Plantación en el IES...">
+                </div>
+                <div>
+                    <label class="block text-base font-medium text-gray-700">Fecha de la Actividad</label>
+                    <input type="date" class="activity-date mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                </div>
+                
+                <!-- *** MODIFICADO: Campo de subida y campo de URL *** -->
+                <div class="bg-white p-4 rounded-md border">
+                    <label class="block text-base font-medium text-gray-700">1. Subir Foto(s) desde el ordenador</label>
+                    <input type="file" class="activity-image mt-1 block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" accept="image/*" multiple>
+                    
+                    <label class="block text-base font-medium text-gray-700 mt-4">2. O pegar URLs de imágenes (una por línea)</label>
+                    <textarea class="activity-image-urls mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" rows="3" placeholder="https://ejemplo.com/foto1.jpg&#10;https://ejemplo.com/foto2.png"></textarea>
+                </div>
+                
+                <div class="bg-white p-4 rounded-md border">
+                    <label class="block text-base font-medium text-gray-700">URL de Vídeo (Opcional)</label>
+                    <input type="text" class="activity-video mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                
+                <div class="bg-white p-4 rounded-md border">
+                    <label class="block text-base font-medium text-gray-700">Publicaciones en Redes Sociales (Opcional)</label>
+                    <div class="space-y-2 mt-2">
+                        <input type="text" class="social-fb mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="Facebook: https://www.facebook.com/...">
+                        <input type="text" class="social-ig mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="Instagram: https://www.instagram.com/...">
+                        <input type="text" class="social-tw mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="Twitter/X: https://x.com/...">
+                    </div>
                 </div>
             </div>
         </div>
     </template>
 
 
-    <script>
-        // --- NÚCLEO DE LA APLICACIÓN ---
-        
-        // URLs de las librerías
-        // *** CAMBIADO a la URL que proporcionaste ***
-        const DOCX_URL = 'https://unpkg.com/docx@8.5.0/build/index.umd.js';
-        const FILESAVER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js';
-
-        // Elementos del DOM
-        const addActivityBtn = document.getElementById('add-activity-btn');
-        const activitiesContainer = document.getElementById('activities-container');
-        const activityTemplate = document.getElementById('activity-template');
-        const generateBtn = document.getElementById('generate-btn');
-        const printBtn = document.getElementById('print-btn');
-        const docxBtn = document.getElementById('docx-btn');
-        const previewSection = document.getElementById('preview-section');
-        const documentOutput = document.getElementById('document-output');
-        const libStatus = document.getElementById('lib-status');
-
-        // Variable global para guardar los datos generados
+    <script type="module">
+        // Estado global
+        let activityCount = 0;
         let generatedData = null;
+        let librariesLoaded = false;
         
-        // --- LOGO FIJO (Solución Problema 1) ---
-        // (Toda la sección del logo fijo ha sido eliminada para evitar el error 'atob')
-
+        // URL de la librería DOCX que funcionó
+        const DOCX_URL = "https://unpkg.com/docx@8.5.0/build/index.umd.js";
         
         /**
          * Función auxiliar para cargar un script dinámicamente
          * Devuelve una promesa que se resuelve (true) si carga, o (false) si falla.
-         * ESTA FUNCIÓN FALTABA Y CAUSABA EL ERROR
          */
         function loadScript(src) {
             return new Promise((resolve) => {
@@ -212,96 +196,117 @@
             });
         }
 
-
         /**
          * Inicializador de la aplicación
-         * Carga las librerías y activa los botones.
          */
         async function initializeApp() {
-            // Cargar ambas librerías en paralelo
-            const [docxLoaded, fileSaverLoaded] = await Promise.all([
-                loadScript(DOCX_URL),
-                loadScript(FILESAVER_URL)
-            ]);
-
-            // Comprobar si *ambas* se cargaron
-            if (docxLoaded && fileSaverLoaded) {
-                // Damos un tiempo prudencial (500ms) para que el navegador parsee los scripts
-                setTimeout(() => {
-                    // Doble comprobación de que los objetos existen
-                    // La v8.5.0 de docx puede que se llame 'docx'
-                    if (typeof docx !== 'undefined' && typeof saveAs !== 'undefined') {
-                        libStatus.textContent = '¡Listo para generar!';
-                        libStatus.classList.remove('text-gray-600');
-                        libStatus.classList.add('text-green-600');
-                        generateBtn.disabled = false;
-                        console.log('Librerías cargadas con éxito (docx, saveAs).');
-                    } else {
-                        libStatus.textContent = 'Error al parsear librerías.';
-                        libStatus.classList.add('text-red-600');
-                        generateBtn.disabled = false; // Activamos al menos el PDF
-                        console.error('Los objetos (docx, saveAs) no están definidos.');
-                    }
-                }, 500); // 500ms de espera
+            const statusEl = document.getElementById('lib-status');
+            
+            // Cargar la librería DOCX
+            const success = await loadScript(DOCX_URL);
+            
+            if (success) {
+                // Comprobar si los objetos globales (docx y FileSaver) existen
+                if (typeof docx !== 'undefined' && typeof FileSaver !== 'undefined') {
+                    librariesLoaded = true;
+                    statusEl.textContent = "¡Listo para generar!";
+                    statusEl.classList.remove('text-gray-500');
+                    statusEl.classList.add('text-green-600', 'font-medium');
+                } else {
+                    statusEl.textContent = "Error al inicializar libs.";
+                    statusEl.classList.add('text-red-600', 'font-medium');
+                }
             } else {
-                libStatus.textContent = 'Error al cargar librerías.';
-                libStatus.classList.add('text-red-600');
-                // Si falla, al menos activamos la generación de PDF
-                generateBtn.disabled = false; 
-                console.error('Una o más librerías no se pudieron cargar.');
+                statusEl.textContent = "Error al cargar librerías.";
+                statusEl.classList.add('text-red-600', 'font-medium');
             }
+
+            // Añadir la primera actividad al cargar
+            addActivity();
         }
-
-
-        // --- Función para añadir un nuevo bloque de actividad ---
-        addActivityBtn.addEventListener('click', () => {
-            const newActivity = activityTemplate.content.cloneNode(true);
-            
-            const removeBtn = newActivity.querySelector('.remove-activity-btn');
-            removeBtn.addEventListener('click', (e) => {
-                e.target.closest('.activity-entry').remove();
-            });
-            
-            activitiesContainer.appendChild(newActivity);
-        });
 
         /**
-         * Función auxiliar para leer un archivo (imagen)
-         * Esta función ahora devuelve un { url, buffer }
-         * url: Un 'blob:' URL para mostrar en HTML (método estable)
-         * buffer: Un ArrayBuffer para incrustar en el DOCX
+         * Añade un nuevo bloque de actividad al formulario
          */
-        async function readImage(file) {
+        function addActivity() {
+            activityCount++;
+            const template = document.getElementById('activity-template');
+            const clone = template.content.cloneNode(true);
+            const entry = clone.querySelector('.activity-entry');
+            
+            // Asignar IDs únicos a los inputs (útil para 'label for')
+            entry.querySelectorAll('input, textarea').forEach(input => {
+                const oldId = input.id;
+                if (oldId) {
+                    input.id = `${oldId}-${activityCount}`;
+                    const label = entry.querySelector(`label[for="${oldId}"]`);
+                    if (label) {
+                        label.setAttribute('for', input.id);
+                    }
+                }
+            });
+
+            // Añadir evento al botón de eliminar
+            clone.querySelector('.delete-activity-btn').addEventListener('click', () => {
+                entry.remove();
+            });
+
+            document.getElementById('activities-container').appendChild(clone);
+        }
+
+        /**
+         * Lee un archivo de imagen (File) y lo convierte a Base64
+         * @param {File} file - El archivo de imagen
+         * @returns {Promise<Object>} - Una promesa que resuelve con { blobUrl, buffer, type, base64 }
+         */
+        function readImage(file) {
             return new Promise((resolve, reject) => {
-                const readerForBuffer = new FileReader();
-                
-                // 1. Crear el Blob URL para el HTML (rápido y estable)
-                let blobUrl = URL.createObjectURL(file);
-                let buffer;
-
-                // 2. Leer el ArrayBuffer para el DOCX
-                readerForBuffer.onload = (e) => {
-                    buffer = e.target.result;
-                    // Resolvemos solo cuando ambos (url y buffer) estén listos
-                    resolve({ url: blobUrl, buffer: buffer });
+                const readerForBlob = new FileReader();
+                readerForBlob.onload = (e_blob) => {
+                    const blobUrl = URL.createObjectURL(file); // Para HTML/PDF
+                    
+                    const readerForBuffer = new FileReader();
+                    readerForBuffer.onload = (e_buffer) => {
+                        const buffer = e_buffer.target.result; // Para DOCX
+                        
+                        const readerForBase64 = new FileReader();
+                        readerForBase64.onload = (e_base64) => {
+                             resolve({
+                                blobUrl: blobUrl, // blob:http... (para <img>)
+                                buffer: buffer,     // ArrayBuffer (para docx.ImageRun)
+                                type: file.type,    // image/png, image/jpeg
+                                base64: e_base64.target.result // data:image/png;base64,...
+                            });
+                        };
+                        readerForBase64.readAsDataURL(file); // Para PDF (aunque blobUrl es mejor)
+                    };
+                    readerForBuffer.readAsArrayBuffer(file);
                 };
-
-                readerForBuffer.onerror = (e) => reject(e);
-
-                // Iniciar la lectura del buffer
-                readerForBuffer.readAsArrayBuffer(file);
+                readerForBlob.onerror = reject;
+                readerForBlob.readAsDataURL(file); // Inicia la primera lectura
             });
         }
 
 
-        // --- Función para Generar el Documento Final ---
+        // --- Event Listeners ---
+        
+        document.getElementById('add-activity-btn').addEventListener('click', addActivity);
+        const generateBtn = document.getElementById('generate-btn');
+        const printBtn = document.getElementById('print-btn');
+        const docxBtn = document.getElementById('docx-btn');
+        const outputSection = document.getElementById('output-section');
+        const documentOutput = document.getElementById('document-output');
+
+        /**
+         * Evento principal: Generar Documento
+         */
         generateBtn.addEventListener('click', async () => {
             generateBtn.textContent = 'Generando...';
             generateBtn.disabled = true;
 
             const projectTitle = document.getElementById('project-title').value;
             
-            // Usar el logo subido (RESTAURADO)
+            // Usar el logo subido
             const logoFile = document.getElementById('logo-file').files[0];
             let logoImage = null;
             if (logoFile) {
@@ -310,9 +315,19 @@
             }
             
             const activityEntries = document.querySelectorAll('#activities-container .activity-entry');
+            let htmlContent = '';
+            let activitiesData = [];
 
-            // 1. Procesar todas las actividades
-            const activitiesPromises = Array.from(activityEntries).map(async (entry, index) => {
+            // 1. Añadir Logo y Título
+            if (logoImage) {
+                htmlContent += `<img src="${logoImage.blobUrl}" alt="Logo" style="width: 200px; height: auto; margin: 0 auto 24px auto; display: block;">`;
+            }
+            if (projectTitle) {
+                htmlContent += `<h1 style="text-align: center; font-size: 1.875rem; font-weight: bold; margin-bottom: 2rem;">${projectTitle}</h1>`;
+            }
+
+            // 2. Procesar cada actividad
+            for (const [index, entry] of Array.from(activityEntries).entries()) {
                 const name = entry.querySelector('.activity-name').value;
                 const date = entry.querySelector('.activity-date').value;
                 const videoUrl = entry.querySelector('.activity-video').value;
@@ -320,263 +335,257 @@
                 const ig = entry.querySelector('.social-ig').value;
                 const tw = entry.querySelector('.social-tw').value;
                 
+                // --- Procesamiento de Imágenes ---
+                let images = [];
+                
+                // a) Imágenes subidas desde el ordenador
                 const imageFiles = entry.querySelector('.activity-image').files;
-                let images = []; // Array para guardar { url, buffer }
-
                 if (imageFiles.length > 0) {
-                    images = await Promise.all(Array.from(imageFiles).map(readImage));
+                    for (const file of imageFiles) {
+                        const imgData = await readImage(file);
+                        images.push({ 
+                            url: imgData.blobUrl, // Para HTML/PDF
+                            buffer: imgData.buffer, // Para DOCX
+                            isLocal: true
+                        });
+                    }
                 }
+                
+                // b) Imágenes desde URLs
+                const imageUrls = entry.querySelector('.activity-image-urls').value
+                                    .split('\n')
+                                    .map(url => url.trim())
+                                    .filter(url => url.startsWith('http'));
+                                    
+                for (const url of imageUrls) {
+                    images.push({
+                        url: url, // Para HTML/PDF
+                        buffer: null, // No podemos obtener buffer por CORS
+                        isLocal: false
+                    });
+                }
+                
+                // Guardar datos para DOCX
+                activitiesData.push({ name, date, videoUrl, fb, ig, tw, images });
 
-                return { name, date, videoUrl, fb, ig, tw, images };
-            });
+                // --- Generar HTML para la vista previa ---
+                htmlContent += `<div class="activity-output-entry" style="margin-bottom: 2.5rem; break-inside: avoid;">`;
+                
+                // Sección 1: Título y Fecha
+                htmlContent += `<div>`;
+                if (name) {
+                    htmlContent += `<h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">${index + 1}. ${name}</h2>`;
+                }
+                if (date) {
+                    const formattedDate = new Date(date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+                    htmlContent += `<p style="font-size: 1.125rem; color: #4B5563; margin-bottom: 1rem;">${formattedDate}</p>`;
+                }
+                htmlContent += `</div>`;
+                
+                htmlContent += `<hr style="margin-top: 1rem; margin-bottom: 1rem;">`;
 
-            const activities = await Promise.all(activitiesPromises);
-            
-            // Guardamos los datos globalmente para que el DOCX los use
-            generatedData = { projectTitle, logoImage, activities };
-
-            // 2. Construir el HTML del documento
-            let documentHTML = `
-                <article class="prose max-w-none">
-                    ${logoImage ? `<div class="w-full flex justify-center mb-6"><img src="${logoImage.url}" alt="Logo del Proyecto" style="max-width: 200px; max-height: 100px; object-fit: contain;"></div>` : ''}
-                    <h1 class="text-3xl font-bold text-center mb-10 pb-4 border-b">${projectTitle || 'Informe de Proyecto'}</h1>
-            `;
-            
-            // 3. Añadir cada actividad al HTML
-            activities.forEach((activity, index) => {
-                documentHTML += `
-                    <section class="activity-print-section mb-10">
-                        <h2 class="text-2xl font-semibold mb-3">${index + 1}. ${activity.name || 'Actividad Sin Nombre'}</h2>
-                        
-                        ${activity.date ? `<p class="text-lg text-gray-600 mb-4"><strong>Fecha:</strong> ${activity.date.split('-').reverse().join('/')}</p>` : ''}
-                        
-                        <!-- Divider before Images -->
-                        ${activity.images && activity.images.length > 0 ? '<hr class="my-6 border-gray-200">' : ''}
-                        
-                        <!-- Usamos la 'url' (blob) del objeto imagen -->
-                        ${activity.images && activity.images.length > 0 ? `
-                            <div class="my-6 grid grid-cols-2 gap-4">
-                                ${activity.images.map(img => `
-                                    <img src="${img.url}" alt="Imagen para ${activity.name}" class="w-full h-auto object-cover rounded-md shadow-md">
-                                `).join('')}
-                            </div>
-                        ` : ''}
-
-                        <!-- Divider before Video/Social -->
-                        ${(activity.videoUrl || activity.fb || activity.ig || activity.tw) ? '<hr class="my-6 border-gray-200">' : ''}
-
-                        ${activity.videoUrl ? `
-                            <div class="my-6 p-3 rounded-md">
-                                <p class="text-gray-800">
-                                    <strong>Enlace al vídeo:</strong> 
-                                    <a href="${activity.videoUrl}" target="_blank" class="text-indigo-600 hover:underline break-all">${activity.videoUrl}</a>
-                                </p>
-                            </div>
-                        ` : ''}
-
-                        ${(activity.fb || activity.ig || activity.tw) ? `
-                            <div class="my-6 p-4 rounded-md">
-                                <h4 class="font-semibold mb-2 text-gray-800">Publicaciones en Redes Sociales:</h4>
-                                <ul class="list-none m-0 p-0 space-y-1">
-                                    ${activity.fb ? `<li class="flex items-center"><strong class="mr-2">Facebook:</strong><a href="${activity.fb}" target="_blank" class="text-indigo-600 hover:underline break-all">${activity.fb}</a></li>` : ''}
-                                    ${activity.ig ? `<li class="flex items-center"><strong class="mr-2">Instagram:</strong><a href="${activity.ig}" target="_blank" class="text-indigo-600 hover:underline break-all">${activity.ig}</a></li>` : ''}
-                                    ${activity.tw ? `<li class="flex items-center"><strong class="mr-2">Twitter:</strong><a href="${activity.tw}" target="_blank" class="text-indigo-600 hover:underline break-all">${activity.tw}</a></li>` : ''}
-                                </ul>
-                            </div>
-                        ` : ''}
-                    </section>
-                    ${index < activities.length - 1 ? '<hr class="my-10 border-gray-300">' : ''}
-                `;
-            });
-            
-            documentHTML += `</article>`;
-            
-            // 4. Mostrar el resultado
-            documentOutput.innerHTML = documentHTML;
-            previewSection.classList.remove('hidden');
-            
-            // Activar el botón de .docx (si las librerías cargaron)
-            if (typeof docx !== 'undefined' && typeof saveAs !== 'undefined') {
-                docxBtn.disabled = false;
+                // Sección 2: Galería de Imágenes
+                if (images.length > 0) {
+                    htmlContent += `<div class="image-gallery" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">`;
+                    for (const img of images) {
+                        htmlContent += `<img src="${img.url}" style="width: 100%; height: auto; object-fit: cover; border-radius: 8px; border: 1px solid #E5E7EB;">`;
+                    }
+                    htmlContent += `</div>`;
+                }
+                
+                htmlContent += `<hr style="margin-top: 1rem; margin-bottom: 1rem;">`;
+                
+                // Sección 3: Vídeo y Redes
+                // (Eliminados los DIVs contenedores grises)
+                if (videoUrl) {
+                    htmlContent += `<p style="margin-bottom: 0.5rem;"><strong>Vídeo:</strong> <a href="${videoUrl}" target="_blank" style="color: #3B82F6;">${videoUrl}</a></p>`;
+                }
+                if (fb) {
+                    htmlContent += `<p style="margin-bottom: 0.5rem;"><strong>Facebook:</strong> <a href="${fb}" target="_blank" style="color: #3B82F6;">${fb}</a></p>`;
+                }
+                if (ig) {
+                    htmlContent += `<p style="margin-bottom: 0.5rem;"><strong>Instagram:</strong> <a href="${ig}" target="_blank" style="color: #3B82F6;">${ig}</a></p>`;
+                }
+                if (tw) {
+                    htmlContent += `<p style="margin-bottom: 0.5rem;"><strong>Twitter/X:</strong> <a href="${tw}" target="_blank" style="color: #3B82F6;">${tw}</a></p>`;
+                }
+                
+                htmlContent += `</div>`; // Cierre de .activity-output-entry
             }
-            
-            generateBtn.textContent = 'Generar Documento';
-            generateBtn.disabled = false;
 
-            previewSection.scrollIntoView({ behavior: 'smooth' });
+            // Guardar datos globales
+            generatedData = { projectTitle, logoImage, activities: activitiesData };
+
+            // Mostrar vista previa
+            documentOutput.innerHTML = htmlContent;
+            outputSection.classList.remove('hidden');
+            
+            // Activar botones
+            generateBtn.textContent = 'Volver a Generar';
+            generateBtn.disabled = false;
+            printBtn.classList.remove('hidden');
+            
+            // Activar DOCX solo si las librerías cargaron
+            if (librariesLoaded) {
+                // Esperar un breve momento para que el DOM se actualice
+                setTimeout(() => {
+                     if (typeof docx !== 'undefined' && typeof FileSaver !== 'undefined') {
+                        docxBtn.disabled = false;
+                        docxBtn.classList.remove('hidden');
+                     } else {
+                        console.error("docx o FileSaver no están definidos, aunque librariesLoaded era true.");
+                        librariesLoaded = false;
+                        document.getElementById('lib-status').textContent = "Error al inicializar.";
+                        document.getElementById('lib-status').classList.add('text-red-600');
+                     }
+                }, 500); // Aumentado a 500ms por si acaso
+            }
         });
 
-        // --- Función para Imprimir ---
+        /**
+         * Evento: Imprimir (Guardar como PDF)
+         */
         printBtn.addEventListener('click', () => {
             window.print();
         });
 
-        // --- Función de Generar DOCX ---
+
+        /**
+         * Evento: Generar DOCX
+         */
         docxBtn.addEventListener('click', async () => {
-            // Comprobación de seguridad
-            if (!generatedData || typeof docx === 'undefined' || typeof saveAs === 'undefined') {
-                console.error('Faltan datos o librerías (docx/saveAs).');
+            if (!generatedData || !librariesLoaded) {
+                alert("Error: No hay datos generados o las librerías no cargaron.");
                 return;
             }
-
-            docxBtn.textContent = 'Creando .docx...';
+            
+            docxBtn.textContent = 'Generando .docx...';
             docxBtn.disabled = true;
 
+            // Desestructurar los objetos de la librería docx
+            const { Document, Packer, Paragraph, TextRun, ImageRun, HeadingLevel, AlignmentType, ExternalHyperlink, PageBreak } = docx;
+
+            let docChildren = []; // Array de párrafos e imágenes para el documento
             const { projectTitle, logoImage, activities } = generatedData;
-            
-            // Desestructuramos los objetos de la librería docx
-            // La v8.5.0 debería tener los mismos objetos
-            // *** AÑADIDO: ExternalHyperlink ***
-            const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, AlignmentType, ExternalHyperlink } = docx;
 
             try {
-                const docChildren = [];
-
-                // Añadir Logo (si existe)
+                // 1. Añadir Logo (si existe)
                 if (logoImage && logoImage.buffer) {
-                    docChildren.push(
+                     docChildren.push(
                         new Paragraph({
                             children: [
                                 new ImageRun({
                                     data: logoImage.buffer,
-                                    transformation: {
-                                        width: 200, // Ancho
-                                        height: 100, // Alto (o ajustar)
-                                    },
-                                }),
+                                    transformation: { width: 200, height: 75 }, // Ajusta tamaño según necesidad
+                                })
                             ],
                             alignment: AlignmentType.CENTER,
-                            spacing: { after: 100 },
+                            spacing: { after: 200 },
                         })
                     );
                 }
 
-                // Título del Proyecto
-                docChildren.push(
-                    new Paragraph({
-                        text: projectTitle || 'Informe de Proyecto',
-                        heading: HeadingLevel.HEADING_1,
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 200 },
-                    })
-                );
-
-                // Iterar sobre las actividades
-                for (const [index, activity] of activities.entries()) {
-                    
-                    // Título de la Actividad
+                // 2. Añadir Título del Proyecto
+                if (projectTitle) {
                     docChildren.push(
                         new Paragraph({
-                            text: `${index + 1}. ${activity.name || 'Actividad Sin Nombre'}`,
-                            heading: HeadingLevel.HEADING_2,
-                            spacing: { before: 300, after: 150 },
+                            text: projectTitle,
+                            heading: HeadingLevel.HEADING_1,
+                            alignment: AlignmentType.CENTER,
+                            spacing: { after: 400 },
                         })
                     );
+                }
+
+                // 3. Iterar sobre las actividades
+                for (const [index, activity] of activities.entries()) {
                     
-                    // Fecha
-                    if (activity.date) {
+                    // Añadir salto de página antes de cada actividad (excepto la primera)
+                    if (index > 0) {
+                        docChildren.push(new Paragraph({ children: [new PageBreak()] }));
+                    }
+
+                    // Sección 1: Título y Fecha
+                    if (activity.name) {
                         docChildren.push(
                             new Paragraph({
-                                children: [
-                                    new TextRun({ text: 'Fecha: ', bold: true }),
-                                    new TextRun(activity.date.split('-').reverse().join('/')),
-                                ],
+                                text: `${index + 1}. ${activity.name}`,
+                                heading: HeadingLevel.HEADING_2,
                                 spacing: { after: 100 },
                             })
                         );
                     }
-
-                    // Divider before Images
-                    if (activity.images && activity.images.length > 0) {
-                        docChildren.push(new Paragraph({ text: "---", alignment: AlignmentType.CENTER, spacing: { before: 100, after: 100 } }));
+                    if (activity.date) {
+                         const formattedDate = new Date(activity.date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+                         docChildren.push(
+                            new Paragraph({
+                                text: formattedDate,
+                                style: "IntenseQuote", // Un estilo simple para diferenciarlo
+                                spacing: { after: 200 },
+                            })
+                        );
                     }
+                    
+                    docChildren.push(new Paragraph({ text: "____________________", alignment: AlignmentType.CENTER, spacing: { after: 200, before: 200 } }));
 
-                    // Imágenes
-                    if (activity.images && activity.images.length > 0) {
-                        for (const img of activity.images) {
-                            // Usamos el 'buffer' de la imagen
-                            docChildren.push(
+                    // Sección 2: Imágenes (SOLO LOCALES)
+                    for (const img of activity.images) {
+                        // Solo procesamos imágenes locales (subidas) que tienen 'buffer'
+                        if (img.isLocal && img.buffer) {
+                             docChildren.push(
                                 new Paragraph({
-                                    children: [ // <-- El array de hijos EMPIEZA aquí
+                                    children: [
                                         new ImageRun({
                                             data: img.buffer, // El ArrayBuffer
                                             transformation: {
-                                                width: 450, // Ancho razonable
-                                                height: 300, // Alto razonable
+                                                width: 450, 
+                                                height: 300, 
                                             },
                                         }),
-                                    ], // <-- El array de hijos TERMINA aquí
-                                    // Las propiedades del Párrafo van FUERA del array:
+                                    ],
                                     spacing: { after: 100 },
-                                    alignment: AlignmentType.CENTER // <-- He vuelto a añadir el centrado
+                                    alignment: AlignmentType.CENTER
                                 })
                             );
                         }
-                    } 
-
-                    // Divider before Video/Social
-                    if (activity.videoUrl || activity.fb || activity.ig || activity.tw) {
-                        docChildren.push(new Paragraph({ text: "---", alignment: AlignmentType.CENTER, spacing: { before: 100, after: 100 } }));
                     }
+                    
+                    docChildren.push(new Paragraph({ text: "____________________", alignment: AlignmentType.CENTER, spacing: { after: 200, before: 200 } }));
 
-                    // Vídeo
-                    if (activity.videoUrl) {
-                        docChildren.push(
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: 'Enlace al vídeo: ', bold: true }),
-                                    // Añadido ExternalHyperlink para que sea clickable
-                                    new ExternalHyperlink({
-                                        children: [
-                                            new TextRun({
-                                                text: activity.videoUrl,
-                                                style: "Hyperlink", // Estilo de hipervínculo (azul, subrayado)
-                                            }),
-                                        ],
-                                        link: activity.videoUrl,
+
+                    // Función auxiliar para crear un párrafo de enlace
+                    const createLinkParagraph = (text, url) => {
+                        return new Paragraph({
+                            children: [
+                                new TextRun({ text: `${text}: `, bold: true }),
+                                new ExternalHyperlink({
+                                    child: new TextRun({
+                                        text: url,
+                                        style: "Hyperlink",
                                     }),
-                                ],
-                                spacing: { after: 100 },
-                            })
-                        );
-                    }
-                    
-                    // Redes Sociales (*** MODIFICADO ***)
-                    if (activity.fb || activity.ig || activity.tw) {
-                        docChildren.push(new Paragraph({ text: 'Publicaciones en Redes Sociales:', bold: true, spacing: { before: 100, after: 50 } }));
-                        
-                        if (activity.fb) docChildren.push(new Paragraph({ children: [
-                            new TextRun({ text: 'Facebook: ', bold: true }),
-                            new ExternalHyperlink({
-                                children: [ new TextRun({ text: activity.fb, style: "Hyperlink" }) ],
-                                link: activity.fb,
-                            }),
-                        ]}));
-                        
-                        if (activity.ig) docChildren.push(new Paragraph({ children: [
-                            new TextRun({ text: 'Instagram: ', bold: true }),
-                            new ExternalHyperlink({
-                                children: [ new TextRun({ text: activity.ig, style: "Hyperlink" }) ],
-                                link: activity.ig,
-                            }),
-                        ]}));
-                        
-                        if (activity.tw) docChildren.push(new Paragraph({ children: [
-                            new TextRun({ text: 'Twitter: ', bold: true }),
-                            new ExternalHyperlink({
-                                children: [ new TextRun({ text: activity.tw, style: "Hyperlink" }) ],
-                                link: activity.tw,
-                            }),
-                        ]}));
-                    }
-                    
-                    // Separador
-                    if (index < activities.length - 1) {
-                         docChildren.push(new Paragraph({ text: "____________________", alignment: AlignmentType.CENTER, spacing: { before: 300, after: 300 } }));
-                    }
-                }
+                                    link: url,
+                                }),
+                            ],
+                            spacing: { after: 100 }
+                        });
+                    };
 
-                // Crear el documento
+                    // Sección 3: Vídeo y Redes (con enlaces clickables)
+                    if (activity.videoUrl) {
+                        docChildren.push(createLinkParagraph("Vídeo", activity.videoUrl));
+                    }
+                    if (activity.fb) {
+                        docChildren.push(createLinkParagraph("Facebook", activity.fb));
+                    }
+                    if (activity.ig) {
+                        docChildren.push(createLinkParagraph("Instagram", activity.ig));
+                    }
+                    if (activity.tw) {
+                        docChildren.push(createLinkParagraph("Twitter/X", activity.tw));
+                    }
+                } // Fin del bucle de actividades
+
+                // 4. Crear el documento
                 const doc = new Document({
                     sections: [{
                         properties: {},
@@ -584,25 +593,24 @@
                     }],
                 });
 
-                // Generar y descargar el blob
+                // 5. Generar el Blob y descargarlo
                 const blob = await Packer.toBlob(doc);
-                saveAs(blob, `${(projectTitle || 'informe').replace(/ /g, '_')}.docx`);
-                
+                FileSaver.saveAs(blob, "informe_generado.docx");
+
                 docxBtn.textContent = 'Descargar .docx';
                 docxBtn.disabled = false;
 
-            } catch (e) {
-                console.error('Error al crear el .docx:', e);
-                docxBtn.textContent = 'Error al generar';
+            } catch (error) {
+                console.error("Error al generar el DOCX:", error);
+                alert("Hubo un error al generar el archivo .docx: " + error.message);
+                docxBtn.textContent = 'Error (Reintentar)';
+                docxBtn.disabled = false;
             }
         });
 
-
-        // --- INICIAR LA APLICACIÓN ---
+        // Inicializar la aplicación al cargar la página
         initializeApp();
-        
-        // Añadir una actividad por defecto
-        addActivityBtn.click();
+
     </script>
 
 </body>
