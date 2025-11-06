@@ -196,7 +196,13 @@
          * Función para convertir Base64 (datos) a un ArrayBuffer
          */
         function base64ToBuffer(base64) {
-            const binaryString = window.atob(base64);
+            // *** CORRECCIÓN ***
+            // Limpiamos el string de Base64 de cualquier salto de línea o espacio
+            // que pueda haber sido introducido al copiar y pegar.
+            const cleanBase64 = base64.replace(/(\r\n|\n|\r)/gm, "").trim();
+            
+            // Usamos el string limpio
+            const binaryString = window.atob(cleanBase64); 
             const len = binaryString.length;
             const bytes = new Uint8Array(len);
             for (let i = 0; i < len; i++) {
