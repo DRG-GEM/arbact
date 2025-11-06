@@ -402,7 +402,8 @@
             
             // Desestructuramos los objetos de la librería docx
             // La v8.5.0 debería tener los mismos objetos
-            const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, AlignmentType } = docx;
+            // *** AÑADIDO: ExternalHyperlink ***
+            const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, AlignmentType, ExternalHyperlink } = docx;
 
             try {
                 const docChildren = [];
@@ -457,33 +458,60 @@
                                             },
                                         }),
                                     ],
-                                    alignment: AlignmentType.CENTER,
-                                    spacing: { after: 100 },
-                                })
-                            );
-                        }
+                                spacing: { after: 100 },
+                            })
+                        );
                     }
 
-                    // Vídeo
+                    // Vídeo (*** MODIFICADO ***)
                     if (activity.videoUrl) {
                         docChildren.push(
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'Enlace al vídeo: ', bold: true }),
-                                    new TextRun(activity.videoUrl),
+                                    // Añadido ExternalHyperlink para que sea clickable
+                                    new ExternalHyperlink({
+                                        children: [
+                                            new TextRun({
+                                                text: activity.videoUrl,
+                                                style: "Hyperlink", // Estilo de hipervínculo (azul, subrayado)
+                                            }),
+                                        ],
+                                        link: activity.videoUrl,
+                                    }),
                                 ],
                                 spacing: { after: 100 },
                             })
                         );
                     }
                     
-                    // Redes Sociales
+                    // Redes Sociales (*** MODIFICADO ***)
                     if (activity.fb || activity.ig || activity.tw) {
                         docChildren.push(new Paragraph({ text: 'Publicaciones en Redes Sociales:', bold: true, spacing: { before: 100, after: 50 } }));
                         
-                        if (activity.fb) docChildren.push(new Paragraph({ children: [new TextRun({ text: 'Facebook: ', bold: true }), new TextRun(activity.fb)] }));
-                        if (activity.ig) docChildren.push(new Paragraph({ children: [new TextRun({ text: 'Instagram: ', bold: true }), new TextRun(activity.ig)] }));
-                        if (activity.tw) docChildren.push(new Paragraph({ children: [new TextRun({ text: 'Twitter: ', bold: true }), new TextRun(activity.tw)] }));
+                        if (activity.fb) docChildren.push(new Paragraph({ children: [
+                            new TextRun({ text: 'Facebook: ', bold: true }),
+                            new ExternalHyperlink({
+                                children: [ new TextRun({ text: activity.fb, style: "Hyperlink" }) ],
+                                link: activity.fb,
+                            }),
+                        ]}));
+                        
+                        if (activity.ig) docChildren.push(new Paragraph({ children: [
+                            new TextRun({ text: 'Instagram: ', bold: true }),
+                            new ExternalHyperlink({
+                                children: [ new TextRun({ text: activity.ig, style: "Hyperlink" }) ],
+                                link: activity.ig,
+                            }),
+                        ]}));
+                        
+                        if (activity.tw) docChildren.push(new Paragraph({ children: [
+                            new TextRun({ text: 'Twitter: ', bold: true }),
+                            new ExternalHyperlink({
+                                children: [ new TextRun({ text: activity.tw, style: "Hyperlink" }) ],
+                                link: activity.tw,
+                            }),
+                        ]}));
                     }
                     
                     // Separador
